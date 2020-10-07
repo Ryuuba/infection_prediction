@@ -22,12 +22,11 @@ int main(int argc, char const *argv[])
 {
   const char* rij_data = argv[1];   // The filename of the link probability matrix
   size_t m = atoi(argv[2]);         // The matrix dimension
-  unsigned lambda = atoi(argv[3]);  // The number of trials
-  double beta = atof(argv[4]);      // The transmission rate
-  double mu = atof(argv[5]);        // The recovery rate
-  double rho_0 = atof(argv[6]);     // The initial infection probability
-  size_t max_step = atoi(argv[7]);  // The number of simulation steps
-  unsigned seed = int(argv[8]);     // The seed
+  double beta = atof(argv[3]);      // The transmission rate
+  double mu = atof(argv[4]);        // The recovery rate
+  double rho_0 = atof(argv[5]);     // The initial infection probability
+  size_t max_step = atoi(argv[6]);  // The number of simulation steps
+  unsigned seed = atoi(argv[7]);     // The seed
   std::vector<std::vector<double>> r(m);  // The link probability matrix
   for (auto& row : r)
     row.resize(m);
@@ -49,7 +48,7 @@ void read_file(const char* filename, std::vector<std::vector<double>>& r) {
   ifs.close();
 }
 
-void initiliaze_p(std::vector<double>& p, double rho_0, unsigned seed) {
+void initialize_p(std::vector<double>& p, double rho_0, unsigned seed) {
   std::mt19937 rng(seed);
   std::bernoulli_distribution bernoulli(rho_0);
   for (auto& p_i : p)
@@ -65,16 +64,16 @@ std::vector<std::pair<unsigned, double>> simulate_network(
 ) {
   double rho;
   std::vector<std::pair<unsigned, double>> rho_ts;
-  std::vector<double> q(p.size()*p.size());
+  std::vector<double> q(p.size());
   for (size_t step = 0; step < max_step; step++) {
-    for (size_t i = 0; i < p.size(); i++) {
-      q[i] = 1;
-      for (size_t j = 0; j < p.size(); j++) 
-        q[i] = (1 - beta*r[j][i]*p[j]);
-      p[i] = (1 - q[i]) * (1 - p[i]) + (1 - mu)*(p[i]) + mu*(1 - q[i])*p[i];
-    }
     rho = std::accumulate(p.begin(), p.end(), 0.0) / p.size(); 
     rho_ts.push_back(std::make_pair(step, rho));
+    for (size_t i = 0; i < p.size(); i++) {
+      q[i] = 1;
+      for (size_t j = 0; j < q.size(); j++) 
+        q[i] *= (1 - beta*r[j][i]*p[j]);
+      p[i] = (1 - q[i]) * (1 - p[i]) + (1 - mu)*(p[i]) + mu*(1 - q[i])*p[i]; // p(t + 1)
+    }
   }
   return rho_ts;
 }
